@@ -1,5 +1,5 @@
 package: GENIE
-description: Comprehensive Monte Carlo neutrino event generator (SHiP: GENIE 3)
+description: Comprehensive Monte Carlo neutrino event generator (SHiP GENIE 3)
 version: "%(tag_basename)s"
 tag: "R-3_06_02"
 source: https://github.com/GENIE-MC/Generator
@@ -42,14 +42,23 @@ function Configure() {
   # shellcheck disable=SC2016
   perl -i -pe "s{libAPFEL\\.la}{libAPFEL.$soext}g" configure
 
+  # libxml2 is prefer_system (LIBXML2_ROOT unset), so resolve it via xml2-config.
+  # Modern macOS keeps system headers in the SDK, not <prefix>/include.
+  local xml2_pfx="${LIBXML2_ROOT:-$(xml2-config --prefix 2>/dev/null)}"
+  local xml2_inc="${xml2_pfx}/include/libxml2" xml2_lib="${xml2_pfx}/lib"
+  if [ ! -d "$xml2_inc" ] && command -v xcrun >/dev/null 2>&1; then
+    local sdk; sdk="$(xcrun --show-sdk-path 2>/dev/null)"
+    [ -d "$sdk/usr/include/libxml2" ] && xml2_inc="$sdk/usr/include/libxml2" && xml2_lib="$sdk/usr/lib"
+  fi
+
   ./configure --prefix="$INSTALLROOT"                                       \
     --enable-lhapdf6 --enable-apfel --enable-fnal --enable-validation-tools  \
     --enable-test --enable-boosted-dark-matter --enable-neutral-heavy-lepton \
     --enable-dark-neutrino --enable-rwght --disable-pythia6 --enable-pythia8  \
     --enable-mathmore                                                        \
     --with-pythia8-lib="${PYTHIA8_ROOT}/lib" --with-pythia8-inc="${PYTHIA8_ROOT}/include" \
-    --with-lhapdf-lib="${LHAPDF_ROOT}/lib"   --with-lhapdf-inc="${LHAPDF_ROOT}/include"    \
-    --with-libxml2-lib="${LIBXML2_ROOT}/lib" --with-libxml2-inc="${LIBXML2_ROOT}/include/libxml2" \
+    --with-lhapdf6-lib="${LHAPDF_ROOT}/lib"  --with-lhapdf6-inc="${LHAPDF_ROOT}/include"   \
+    --with-libxml2-lib="${xml2_lib}"         --with-libxml2-inc="${xml2_inc}"              \
     --with-log4cpp-inc="${LOG4CPP_ROOT}/include" --with-log4cpp-lib="${LOG4CPP_ROOT}/lib" \
     --with-apfel-inc="${APFEL_ROOT}/include" --with-apfel-lib="${APFEL_ROOT}/lib"
 }
