@@ -51,6 +51,12 @@ function Configure() {
   perl -0pi -e 's{find_package\(Pythia6 REQUIRED\)}{if(NOT TARGET Pythia6::Pythia6)\n  add_library(Pythia6::Pythia6 SHARED IMPORTED)\n  set_target_properties(Pythia6::Pythia6 PROPERTIES IMPORTED_LOCATION "\$ENV{PYTHIA6_ROOT}/lib/libpythia6\${CMAKE_SHARED_LIBRARY_SUFFIX}")\nendif()}g;' \
     "$BITS_CMAKE_SRC/cmake/Templates/ROOTEGPythia6Config.cmake.in"
 
+  # 4) The config's own ROOTEGPythia6_LIB_DIR probe hardcodes libEGPythia6.so;
+  #    match the platform suffix so find_package(ROOTEGPythia6) resolves on macOS.
+  # shellcheck disable=SC2016
+  perl -i -pe 's{libEGPythia6\.so}{libEGPythia6\${CMAKE_SHARED_LIBRARY_SUFFIX}}g' \
+    "$BITS_CMAKE_SRC/cmake/Templates/ROOTEGPythia6Config.cmake.in"
+
   cmake -S "$BITS_CMAKE_SRC" -B "$BITS_CMAKE_BUILD"                    \
     -DCMAKE_INSTALL_PREFIX="$INSTALLROOT"                             \
     -DCMAKE_INSTALL_LIBDIR=lib                                        \
