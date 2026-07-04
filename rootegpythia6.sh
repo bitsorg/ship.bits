@@ -26,19 +26,29 @@ prefer_system_check: |
 MODULE_OPTIONS="--bin --lib --root-inc"
 ##############################
 function Configure() {
-  # Patch the private source copy (BITS_CMAKE_SRC); SOURCES is read-only.
-  # 1) Pass bare header names to ROOT_GENERATE_DICTIONARY instead of absolute
-  #    paths, which otherwise get baked into $clingAutoload$ and break at
-  #    runtime once the build dir is gone (e.g. on CVMFS).
+  # Patch the private source copy (BITS_CMAKE_SRC); SOURCES is read-only. Use
+  # perl for in-place edits: it behaves identically everywhere, unlike GNU vs
+  # BSD (macOS) `sed -i` and sed's one-line insert.
+
+  # 1) Pass bare header names to ROOT_GENERATE_DICTIONARY (absolute paths get
+  #    baked into $clingAutoload$ and break once the build dir is gone), and add
+  #    the include dir so the headers still resolve.
   # shellcheck disable=SC2016
-  sed -i \
-    -e 's|${CMAKE_CURRENT_LIST_DIR}/inc/\(.*\.h\)|\1|g' \
-    -e '/^ROOT_GENERATE_DICTIONARY/i include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)' \
+  perl -i -pe 's{\$\{CMAKE_CURRENT_LIST_DIR\}/inc/(.*\.h)}{$1}g; s{^ROOT_GENERATE_DICTIONARY}{include_directories(\${CMAKE_CURRENT_LIST_DIR}/inc)\nROOT_GENERATE_DICTIONARY}g;' \
     "$BITS_CMAKE_SRC/CMakeLists.txt"
 
-  # 2) Define the namespaced Pythia6::Pythia6 imported target directly so we do
-  #    not depend on whichever FindPythia6 a downstream consumer loads first.
-  sed -i 's|find_package(Pythia6 REQUIRED)|if(NOT TARGET Pythia6::Pythia6)\n  if(NOT DEFINED ENV{PYTHIA6_ROOT} OR NOT EXISTS "$ENV{PYTHIA6_ROOT}/lib/libPythia6.so")\n    message(FATAL_ERROR "ROOTEGPythia6 requires PYTHIA6_ROOT to point to a directory containing lib/libPythia6.so")\n  endif()\n  add_library(Pythia6::Pythia6 SHARED IMPORTED)\n  set_target_properties(Pythia6::Pythia6 PROPERTIES IMPORTED_LOCATION "$ENV{PYTHIA6_ROOT}/lib/libPythia6.so")\nendif()|' \
+  # 2) The bundled FindPythia6 hardcodes libPythia6.so; bits installs
+  #    lib/libpythia6.<ext> (.dylib on macOS, .so on Linux). Point it at the
+  #    correct name and platform suffix.
+  # shellcheck disable=SC2016
+  perl -i -pe 's{libPythia6\.so}{libpythia6\${CMAKE_SHARED_LIBRARY_SUFFIX}}g;' \
+    "$BITS_CMAKE_SRC/cmake/Modules/FindPythia6.cmake"
+
+  # 3) Define the namespaced Pythia6::Pythia6 imported target directly in the
+  #    installed package config so downstream consumers don't depend on whichever
+  #    FindPythia6 they load first.
+  # shellcheck disable=SC2016
+  perl -0pi -e 's{find_package\(Pythia6 REQUIRED\)}{if(NOT TARGET Pythia6::Pythia6)\n  add_library(Pythia6::Pythia6 SHARED IMPORTED)\n  set_target_properties(Pythia6::Pythia6 PROPERTIES IMPORTED_LOCATION "\$ENV{PYTHIA6_ROOT}/lib/libpythia6\${CMAKE_SHARED_LIBRARY_SUFFIX}")\nendif()}g;' \
     "$BITS_CMAKE_SRC/cmake/Templates/ROOTEGPythia6Config.cmake.in"
 
   cmake -S "$BITS_CMAKE_SRC" -B "$BITS_CMAKE_BUILD"                    \
@@ -53,8 +63,9 @@ function Configure() {
 
 function PostInstall() {
   # Fix rootmap: the dictionary is named TPythia6 but the library is EGPythia6.
-  # ROOT scans *.rootmap by content, so the filename is cosmetic.
-  sed -i 's/libTPythia6\.so/libEGPythia6.so/' "$INSTALLROOT/lib/libTPythia6.rootmap"
+  # ROOT scans *.rootmap by content, so the filename is cosmetic. Match either
+  # extension so it works on macOS (.dylib) and Linux (.so).
+  perl -i -pe 's{\blibTPythia6\.(so|dylib)\b}{libEGPythia6.$1}g' "$INSTALLROOT/lib/libTPythia6.rootmap"
   mv "$INSTALLROOT/lib/libTPythia6.rootmap" "$INSTALLROOT/lib/libEGPythia6.rootmap"
   # Do NOT rename libTPythia6_rdict.pcm: the literal name is baked into the
   # dictionary registration; TCling looks it up by dictionary name (TPythia6).
