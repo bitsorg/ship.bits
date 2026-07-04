@@ -62,7 +62,21 @@ function Configure() {
   # overlays the compiled libraries on top.
   rsync -a "$BITS_CMAKE_SRC"/ "$INSTALLROOT"/
 
+  # FairShip is Linux-first: many targets under-link ROOT (Physics/EG/VMC) and
+  # FairRoot base libs, relying on Linux's flat namespace to resolve them lazily.
+  # macOS's two-level namespace needs them at link time; allow load-time lookup
+  # (as FairRoot/ROOT themselves do) so the dylibs link.
+  local -a _macos_ld=()
+  if [ "$(uname)" = Darwin ]; then
+    _macos_ld=(
+      "-DCMAKE_SHARED_LINKER_FLAGS=-undefined dynamic_lookup"
+      "-DCMAKE_MODULE_LINKER_FLAGS=-undefined dynamic_lookup"
+      "-DCMAKE_EXE_LINKER_FLAGS=-undefined dynamic_lookup"
+    )
+  fi
+
   cmake -S "$BITS_CMAKE_SRC" -B "$BITS_CMAKE_BUILD"                    \
+    "${_macos_ld[@]}"                                                 \
     -G Ninja                                                          \
     -DFAIRBASE="$FAIRROOT_ROOT/share/fairbase"                        \
     -DFAIRROOTPATH="$FAIRROOT_ROOT"                                   \
