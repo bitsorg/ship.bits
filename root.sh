@@ -1,5 +1,5 @@
 package: ROOT
-description: CERN ROOT data analysis framework (SHiP: built with Pythia8/TPythia8)
+description: CERN ROOT data analysis framework (SHiP built with Pythia8/TPythia8)
 version: "v6.38.00"
 tag: "v6-38-00"
 source: https://github.com/root-project/root.git

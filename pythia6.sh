@@ -1,8 +1,9 @@
 package: pythia6
-description: Pythia 6 Monte Carlo event generator (alisw sources, ROOT interface)
+description: Pythia 6 with the ROOT/TPythia6 interface glue (SHiP/SND-LHC sources)
 version: "%(tag_basename)s"
-tag: "428-alice4"
-source: https://github.com/alisw/pythia6
+tag: "v6.4.28-snd"
+source: https://github.com/SND-LHC/pythia6
+
 build_requires:
   - CMake
   - ninja-fortran
