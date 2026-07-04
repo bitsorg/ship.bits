@@ -64,7 +64,10 @@ function Configure() {
 }
 
 function Make() {
-  make ${JOBS:+-j $JOBS} CXXFLAGS="-Wall ${CXXFLAGS}" CFLAGS="-Wall ${CFLAGS}"
+  # Do NOT pass CXXFLAGS= on the command line: that overrides GENIE's per-arch
+  # CXXFLAGS, which already carries $(ROOT_FLAGS) (root-config --cflags, i.e.
+  # -std=c++20). Overriding it strips -std and ROOT then refuses to compile.
+  make ${JOBS:+-j $JOBS}
 }
 
 function MakeInstall() {
