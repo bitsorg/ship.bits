@@ -42,17 +42,23 @@ function Configure() {
   unset SIMPATH
 
   # Patch the private source copy (BITS_CMAKE_SRC); SOURCES is mounted read-only.
+  # Use perl for in-place edits: BSD/macOS `sed -i` and GNU-only
+  # `xargs --no-run-if-empty` are not portable and silently no-op here.
+  #
   # Upstream FairRoot bug (<= v19.0.1): the propagator example links
-  # Boost::serialization but the component is only requested when BUILD_BASEMQ=ON,
-  # so with BUILD_BASEMQ=OFF + CMP0167=NEW the imported target is missing.
-  # Fix upstream: https://github.com/FairRootGroup/FairRoot/pull/1631
-  sed -i 's|list(APPEND boost_dependencies program_options)|list(APPEND boost_dependencies program_options serialization)|' \
+  # Boost::serialization but the component is only requested under BUILD_BASEMQ,
+  # so with BUILD_BASEMQ=OFF the imported target is missing. Request it
+  # unconditionally just before find_package2(Boost). (upstream PR #1631)
+  # shellcheck disable=SC2016
+  perl -i -pe 's{^(\s*find_package2\(PUBLIC Boost)}{  list(APPEND boost_dependencies serialization)\n$1}' \
     "$BITS_CMAKE_SRC/CMakeLists.txt"
 
   # Upstream FairRoot (<= v19.0.1) includes <fmt/core.h> but calls fmt::format,
   # which since fmt 11.1/12.0 lives in <fmt/format.h>. Rewrite the includes.
-  grep -rl '#include <fmt/core.h>' "$BITS_CMAKE_SRC" \
-    | xargs --no-run-if-empty sed -i 's|#include <fmt/core.h>|#include <fmt/format.h>|'
+  # shellcheck disable=SC2016
+  grep -rl '#include <fmt/core.h>' "$BITS_CMAKE_SRC" | while IFS= read -r f; do
+    perl -i -pe 's{#include <fmt/core.h>}{#include <fmt/format.h>}' "$f"
+  done
 
   [[ -n $BOOST_ROOT ]] && BOOST_NO_SYSTEM_PATHS=ON || BOOST_NO_SYSTEM_PATHS=OFF
   cmake -S "$BITS_CMAKE_SRC" -B "$BITS_CMAKE_BUILD"                    \
