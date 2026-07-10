@@ -58,14 +58,45 @@ function Configure() {
   # Default ROOT_TESTING to OFF unless set externally
   ROOT_TESTING=${ROOT_TESTING:-OFF}
 
-  # Default to C++20 (podio etc. need it) but honour an explicit -std=c++NN in
-  # CXXFLAGS so stacks that pin an older standard are not silently upgraded.
+  # Pick the C++ standard ROOT is compiled with, from the compiler's capability.
+  #
+  # ROOT >= 6.38 requires C++17 or newer: cmake/modules/CheckCompiler.cmake aborts
+  # on 11/14 ("Unsupported C++ standard"). The wider LCG release defaults still
+  # pin -std=c++11 in CXXFLAGS for other packages, so we must NOT blindly inherit
+  # that here — that is exactly what failed the ROOT configure. Deciding this in
+  # the ROOT recipe (rather than the shared defaults) rebuilds ROOT alone, not the
+  # whole stack.
+  #
+  # Detect the same compiler this recipe will use below (Darwin -> clang++, else
+  # c++) and its major version, then choose the highest ROOT-supported standard
+  # the compiler handles well, preferring ROOT's default of C++20.
+  case $(uname) in
+    Darwin) _cxx_probe=clang++ ;;
+    *)      _cxx_probe=c++ ;;
+  esac
+  _cxx_name="$("$_cxx_probe" --version 2>/dev/null | head -1)"
+  _cxx_major="$("$_cxx_probe" -dumpversion 2>/dev/null | cut -d. -f1)"
+  [[ "$_cxx_major" =~ ^[0-9]+$ ]] || _cxx_major=0
+
+  # Highest standard the compiler supports well, within ROOT's supported set.
+  # Unknown/old compiler falls back to 17, which ROOT still accepts.
+  case "$_cxx_name" in
+    *clang*) _cxx_max=17; [[ $_cxx_major -ge 14 ]] && _cxx_max=20; [[ $_cxx_major -ge 17 ]] && _cxx_max=23 ;;
+    *)       _cxx_max=17; [[ $_cxx_major -ge 11 ]] && _cxx_max=20; [[ $_cxx_major -ge 13 ]] && _cxx_max=23 ;;
+  esac
+
+  # ROOT's preferred default is C++20 (podio etc.), capped by the compiler.
   CMAKE_CXX_STANDARD=20
-  [[ "$CXXFLAGS" == *'-std=c++11'* ]] && CMAKE_CXX_STANDARD=11 || true
-  [[ "$CXXFLAGS" == *'-std=c++14'* ]] && CMAKE_CXX_STANDARD=14 || true
-  [[ "$CXXFLAGS" == *'-std=c++17'* ]] && CMAKE_CXX_STANDARD=17 || true
-  [[ "$CXXFLAGS" == *'-std=c++20'* ]] && CMAKE_CXX_STANDARD=20 || true
-  [[ "$CXXFLAGS" == *'-std=c++23'* ]] && CMAKE_CXX_STANDARD=23 || true
+  [[ $_cxx_max -lt 20 ]] && CMAKE_CXX_STANDARD=$_cxx_max
+
+  # Honour an explicit -std=c++NN in CXXFLAGS only when ROOT supports it (>=17)
+  # and the compiler does; an older stack-wide c++11/14 pin is ignored so it can
+  # no longer break the ROOT build.
+  for _std in 17 20 23; do
+    [[ "$CXXFLAGS" == *"-std=c++${_std}"* && $_std -le $_cxx_max ]] && CMAKE_CXX_STANDARD=$_std
+  done
+  echo "ROOT: building with C++${CMAKE_CXX_STANDARD} (compiler: ${_cxx_name:-unknown}, max C++${_cxx_max})"
+  unset _cxx_probe _cxx_name _cxx_major _cxx_max _std
 
   # Version-gated cmake flags (strip leading 'v' from PKGVERSION for sorting)
   _root_ver="${PKGVERSION#v}"
