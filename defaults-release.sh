@@ -8,14 +8,6 @@ version: v1
 #   architecture: %(_machine)s-%(os)s    # x86_64-ubuntu2510
 architecture: "%(os)s_%(machine)s"       # ubuntu2510_x86-64  (default layout)
 
-# Optional: declare the CVMFS layout once so the build/publish/reuse paths are
-# derived instead of passed as scattered flags. Templates may use
-# %(architecture)s (the effective, combined arch). install_dir / module_dir are
-# relative to cvmfs_dir.
-cvmfs_dir:   "/cvmfs/sft.cern.ch/ship/releases"
-install_dir: "%(architecture)s/Packages"
-module_dir:  "%(architecture)s/modules"
-
 # Build-host policy: how the build *runs* (network, CPU), not what it produces.
 # Keys under `system:` are NOT part of any package hash, so changing them never
 # triggers a rebuild — unlike `env:` below, which is hashed.
@@ -25,6 +17,13 @@ system:
   remote_store:  "https://s3.cern.ch/swift/v1/lcgapp-bits-testing"
   certify_group: "ship"
   manifests_remote: "https://gitlab.cern.ch/buncic/bits-manifests.git"
+  # CVMFS path templates (this group's structural choice; never hashed).
+  # Recorded in .meta.json; publish resolves {prefix} + {pkg}/{tag}/{platform}.
+  prefix:                     "/cvmfs/sft-nightlies-test.cern.ch/ship/releases"
+  cvmfs_user_prefix:          "/cvmfs/sft-nightlies-test.cern.ch/ship/user"  # sibling of releases, not {prefix}/user
+  cvmfs_path_template:        "{prefix}/{pkg}/{tag}/{platform}"
+  cvmfs_modules_template:     "{prefix}/{platform}/Modules/modulefiles/{pkg}"
+  cvmfs_shared_path_template: "{prefix}/noarch/{pkg}/{tag}"
   
 env:
   CXXFLAGS: "-fPIC -g -O2"
