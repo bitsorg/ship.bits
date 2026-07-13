@@ -19,8 +19,9 @@ system:
   cvmfs_shared_path_template: "{prefix}/noarch/{pkg}/{tag}"
   
 env:
-  CXXFLAGS: "-fPIC -g -O2"
   CFLAGS: "-fPIC -g -O2"
+  CXXSTD: '23'
+  CXXFLAGS: "${CFLAGS} -std=c++${CXXSTD}"
   CMAKE_BUILD_TYPE: "RELWITHDEBINFO"
   MACOSX_DEPLOYMENT_TARGET: '14.0'
   ENABLE_IPO: 'OFF'
