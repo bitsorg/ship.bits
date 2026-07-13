@@ -14,7 +14,7 @@ system:
   # CVMFS path templates 
   prefix:                     "/cvmfs/sft-nightlies-test.cern.ch/ship/releases"
   cvmfs_user_prefix:          "/cvmfs/sft-nightlies-test.cern.ch/ship/user" 
-  cvmfs_path_template:        "{prefix}/{pkg}/{tag}/{platform}"
+  cvmfs_releases_template:        "{prefix}/{pkg}/{tag}/{platform}"
   cvmfs_modules_template:     "{prefix}/{platform}/Modules/modulefiles/{pkg}"
   cvmfs_shared_path_template: "{prefix}/noarch/{pkg}/{tag}"
   
