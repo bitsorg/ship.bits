@@ -51,16 +51,23 @@ function Configure() {
     [ -d "$sdk/usr/include/libxml2" ] && xml2_inc="$sdk/usr/include/libxml2" && xml2_lib="$sdk/usr/lib"
   fi
 
+  # Dependencies install to lib on Ubuntu/macOS but lib64 on el10 (CMake's
+  # GNUInstallDirs). GENIE's ./configure needs an explicit --with-*-lib path, so
+  # resolve it per-dependency (prefer lib64 if present, else lib) — the same
+  # lib/lib64 handling root.sh already uses for vdt. Producers are untouched, so
+  # nothing in lcg.bits needs rebuilding.
+  _libdir() { [ -d "$1/lib64" ] && echo "$1/lib64" || echo "$1/lib"; }
+
   ./configure --prefix="$INSTALLROOT"                                       \
     --enable-lhapdf6 --enable-apfel --enable-fnal --enable-validation-tools  \
     --enable-test --enable-boosted-dark-matter --enable-neutral-heavy-lepton \
     --enable-dark-neutrino --enable-rwght --disable-pythia6 --enable-pythia8  \
     --enable-mathmore                                                        \
-    --with-pythia8-lib="${PYTHIA8_ROOT}/lib" --with-pythia8-inc="${PYTHIA8_ROOT}/include" \
-    --with-lhapdf6-lib="${LHAPDF_ROOT}/lib"  --with-lhapdf6-inc="${LHAPDF_ROOT}/include"   \
+    --with-pythia8-lib="$(_libdir "${PYTHIA8_ROOT}")" --with-pythia8-inc="${PYTHIA8_ROOT}/include" \
+    --with-lhapdf6-lib="$(_libdir "${LHAPDF_ROOT}")"  --with-lhapdf6-inc="${LHAPDF_ROOT}/include"   \
     --with-libxml2-lib="${xml2_lib}"         --with-libxml2-inc="${xml2_inc}"              \
-    --with-log4cpp-inc="${LOG4CPP_ROOT}/include" --with-log4cpp-lib="${LOG4CPP_ROOT}/lib" \
-    --with-apfel-inc="${APFEL_ROOT}/include" --with-apfel-lib="${APFEL_ROOT}/lib"
+    --with-log4cpp-inc="${LOG4CPP_ROOT}/include" --with-log4cpp-lib="$(_libdir "${LOG4CPP_ROOT}")" \
+    --with-apfel-inc="${APFEL_ROOT}/include" --with-apfel-lib="$(_libdir "${APFEL_ROOT}")"
 }
 
 function Make() {
