@@ -19,9 +19,10 @@ system:
   cvmfs_shared_path_template: "{prefix}/noarch/{pkg}/{tag}"
   
 env:
+  # No CXXFLAGS/-std here: the C++ standard is owned by the compiler-axis defaults
+  # (stacks.bits/defaults-gccNN, defaults-clang) per compiler capability, not this
+  # base profile.
   CFLAGS: "-fPIC -g -O2"
-  CXXSTD: '23'
-  CXXFLAGS: "${CFLAGS} -std=c++${CXXSTD}"
   CMAKE_BUILD_TYPE: "RELWITHDEBINFO"
   MACOSX_DEPLOYMENT_TARGET: '14.0'
   ENABLE_IPO: 'OFF'
