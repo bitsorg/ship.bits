@@ -12,7 +12,7 @@ system:
   certify_group: "ship"
   manifests_remote: "https://gitlab.cern.ch/buncic/bits-manifests.git"
   # CVMFS path templates 
-  prefix:                     "/cvmfs/sft-nightlies-test.cern.ch/ship/releases"
+  # CVMFS root prefix is authoritative in bits-console ui-config.yaml (auth boundary).
   cvmfs_user_prefix:          "/cvmfs/sft-nightlies-test.cern.ch/ship/user" 
   cvmfs_releases_template:        "{prefix}/{pkg}/{tag}/{platform}"
   cvmfs_modules_template:     "{prefix}/{platform}/Modules/modulefiles/{pkg}"
