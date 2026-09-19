@@ -4,6 +4,9 @@ version: v1
 # Inherits shared env + package_family + release/lcg.bits tag wiring from
 # stacks.bits (-> lcg.bits recipe pool); adds the ship CVMFS namespace, the S3
 # store/certify policy, the arch-string layout, and a macOS ROOT pin.
+variables:
+  release: "main"
+
 requires:
   - stacks.bits
 
@@ -22,6 +25,11 @@ system:
   cvmfs_shared_path_template: "{prefix}/noarch/{pkg}/{tag}"
 
 overrides:
+  lcg.bits:
+    tag: "%(release)s"
+  stacks.bits:
+    tag: "%(release)s"
+
   # ROOT >= 6.40 on macOS for Apple-clang / Xcode compatibility; ":osx" gates it to
   # macOS arches, so Linux keeps the recipe default.
   "ROOT:osx":
