@@ -1,9 +1,10 @@
 package: defaults-ship
 version: v1
 # SHIP group overlay — compose with:  --defaults ship[::gcc15::opt]
-# Inherits shared env + package_family + release/lcg.bits tag wiring from
-# stacks.bits (-> lcg.bits recipe pool); adds the ship CVMFS namespace, the S3
-# store/certify policy, the arch-string layout, and a macOS ROOT pin.
+# Inherits shared env + package_family from stacks.bits (-> lcg.bits recipe
+# pool); adds the ship CVMFS namespace, the S3 store/certify policy, and a macOS
+# ROOT pin. The release comes from the command line (--set release=LCG_110);
+# `main` is only the default.
 variables:
   release: "main"
 

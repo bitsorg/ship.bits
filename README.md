@@ -24,7 +24,7 @@ ship.bits  ──requires──▶  stacks.bits  ──requires──▶  lcg.bi
 Composed with `--defaults ship[::gcc15]`.
 
 - `requires: stacks.bits` — the shared base.
-- Release tracking is inherited from `stacks.bits` (`release: main` + `overrides: lcg.bits: tag: "%(release)s"`), so `lcg.bits` is fetched at the branch `release` names (see [Releases](#releases)).
+- `variables: release: "main"` plus `overrides: lcg.bits`/`stacks.bits: tag: "%(release)s"` — both providers follow the release; `main` is only the default (see [Releases](#releases)). Identical in every stacks-based overlay.
 - `overrides: "ROOT:osx"` — ROOT v6.40.00 on macOS only, for Apple-clang/Xcode; Linux keeps the recipe default.
 - `system:` — the CVMFS namespace and store policy. Never hashed, so it never affects reuse.
 
@@ -74,11 +74,9 @@ Each replacement changes the hash of that package and of everything above it in 
 
 The single `release` variable names **both** the `lcg.bits` branch to build against and the `{release}` path segment. `bits` resolves it, highest precedence first:
 
-1. an explicit non-trunk value (not `main`/`master`/`HEAD`): `--set release=LCG_110`, or `release:` in a profile such as `dev4`;
-2. else the working-directory branch name (`-patches` stripped);
-3. else `main` — `lcg.bits` `main`, no `{release}` path segment.
+**Pass the release on the command line** (`--set release=LCG_110`); `main` is only the default. Every stacks-based group (atlas, lhcb, key4hep, ship) follows this rule, because a `--set` value is also exported into the build environment and enters every package hash: a release chosen any other way (a `release:` in a profile, or the checkout's branch name) hashes differently, and nothing the other groups built would be reused. Reuse also needs the same `lcg.bits` and `stacks.bits` commits and the same compiler/build-type profiles.
 
-The effective release must exist as an `lcg.bits` branch. A SHiP build reuses what another group already put in the store when both used the same `lcg.bits` commit, the same compiler/build-type profiles, and chose the release the same way — a `--set` value also enters every hash, so `--set release=LCG_110` and a profile-declared `release:` differ.
+The effective release must exist as an `lcg.bits` and a `stacks.bits` branch; on `main` the `{release}` path segment is dropped.
 
 ---
 
@@ -108,7 +106,7 @@ bitsenv enter FairShip/26.06
 
 | File | Role |
 |---|---|
-| `defaults-ship.sh` | SHiP overlay: `stacks.bits` base, CVMFS namespace, store policy, macOS ROOT pin |
+| `defaults-ship.sh` | SHiP overlay: `stacks.bits` base, release tracking, CVMFS namespace, store policy, macOS ROOT pin |
 | `fairship.sh`, `fairroot.sh`, `fairlogger.sh`, `faircmakemodules.sh`, `geant3.sh`, `rootegpythia6.sh` | the SHiP stack |
 | `root.sh`, `pythia6.sh`, `genie.sh` | SHiP builds of externals that replace the `lcg.bits` recipes |
 | `ninja-fortran.sh`, `termcap.sh` | build tool and system check |
