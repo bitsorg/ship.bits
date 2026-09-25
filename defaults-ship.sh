@@ -10,9 +10,6 @@ variables:
 requires:
   - stacks.bits
 
-# Optional arch-string layout (default %(os)s_%(machine)s -> ubuntu2510_x86-64).
-architecture: "%(os)s_%(machine)s"
-
 # ship CVMFS namespace + store policy (system: is NOT hashed -> never affects reuse).
 system:
   remote_store:     "https://s3.cern.ch/swift/v1/lcgapp-bits-testing"
@@ -20,9 +17,9 @@ system:
   manifests_remote: "https://gitlab.cern.ch/buncic/bits-manifests.git"
   prefix:                     "/cvmfs/bits.cern.ch/ship/releases"
   cvmfs_user_prefix:          "/cvmfs/bits.cern.ch/ship/user"
-  cvmfs_releases_template:    "{prefix}/{pkg}/{tag}/{platform}"
-  cvmfs_modules_template:     "{prefix}/{platform}/Modules/modulefiles/{pkg}"
-  cvmfs_shared_path_template: "{prefix}/noarch/{pkg}/{tag}"
+  cvmfs_releases_template:    "{prefix}/{release}/{pkg}/{tag}/{platform}"
+  cvmfs_modules_template:     "{prefix}/{release}/{platform}/Modules/modulefiles/{pkg}"
+  cvmfs_shared_path_template: "{prefix}/{release}/noarch/{pkg}/{tag}"
 
 overrides:
   lcg.bits:
