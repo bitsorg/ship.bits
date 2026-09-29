@@ -32,12 +32,12 @@ Composed with `--defaults ship[::gcc15]`.
 |---|---|
 | `prefix` | `/cvmfs/bits.cern.ch/ship/releases` — must match `cvmfs_prefix` in bits-console `communities/SHiP/ui-config.yaml`, or a build refuses to publish |
 | `cvmfs_user_prefix` | `/cvmfs/bits.cern.ch/ship/user` — per-user publishes go to `<user_prefix>/<login>` |
-| `cvmfs_releases_template` | `{prefix}/{release}/{pkg}/{tag}/{platform}` |
-| `cvmfs_modules_template` | `{prefix}/{release}/{platform}/Modules/modulefiles/{pkg}` |
-| `cvmfs_shared_path_template` | `{prefix}/{release}/noarch/{pkg}/{tag}` |
+| `cvmfs_releases_template` | `{prefix}/{release}/{pkg}/{version}/{arch}` |
+| `cvmfs_modules_template` | `{prefix}/{release}/{arch}/Modules/modulefiles/{pkg}` |
+| `cvmfs_shared_path_template` | `{prefix}/{release}/noarch/{pkg}/{version}` |
 | `remote_store`, `certify_group`, `manifests_remote` | S3 store, certification group and manifests repo for SHiP builds |
 
-A package built for `LCG_110` lands at `…/ship/releases/LCG_110/<pkg>/<tag>/<platform>`; on the `main` line the `{release}/` segment collapses away.
+A package built for `LCG_110` lands at `…/ship/releases/LCG_110/<pkg>/<version>/<arch>`, where `<arch>` is the build arch (e.g. `x86_64-el9-gcc15-opt`); on the `main` line the `{release}/` segment collapses away.
 
 The overlay deliberately has **no `env:` and no `disable:`**: both are hashed and would make every SHiP package differ from the shared stacks.
 

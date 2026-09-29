@@ -18,9 +18,13 @@ system:
   manifests_remote: "https://gitlab.cern.ch/buncic/bits-manifests.git"
   prefix:                     "/cvmfs/bits.cern.ch/ship/releases"
   cvmfs_user_prefix:          "/cvmfs/bits.cern.ch/ship/user"
-  cvmfs_releases_template:    "{prefix}/{release}/{pkg}/{tag}/{platform}"
-  cvmfs_modules_template:     "{prefix}/{release}/{platform}/Modules/modulefiles/{pkg}"
-  cvmfs_shared_path_template: "{prefix}/{release}/noarch/{pkg}/{tag}"
+  # <release>/<pkg>/<version>/<arch>: {arch} is the build arch
+  # (x86_64-el9-gcc15-opt), so compilers/build types do not collide; {version}
+  # has no bits revision, so within one release a rebuilt package of the same
+  # version conflicts with the published one (replace: PREPUB_REPLACE_ON_CONFLICT).
+  cvmfs_releases_template:    "{prefix}/{release}/{pkg}/{version}/{arch}"
+  cvmfs_modules_template:     "{prefix}/{release}/{arch}/Modules/modulefiles/{pkg}"
+  cvmfs_shared_path_template: "{prefix}/{release}/noarch/{pkg}/{version}"
 
 overrides:
   lcg.bits:
