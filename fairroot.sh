@@ -2,6 +2,7 @@ package: FairRoot
 version: "%(tag_basename)s"
 tag: "v19.0.1"
 source: https://github.com/FairRootGroup/FairRoot
+license: LGPL-3.0-only
 requires:
   - CMake
   - pythia8

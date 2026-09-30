@@ -2,6 +2,7 @@ package: FairLogger
 version: "%(tag_basename)s"
 tag: v2.3.2
 source: https://github.com/FairRootGroup/FairLogger
+license: LGPL-3.0-only
 requires:
   - CMake
   - fmt

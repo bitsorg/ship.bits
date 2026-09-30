@@ -2,6 +2,7 @@ package: FairCMakeModules
 version: "%(tag_basename)s"
 tag: v1.0.0
 source: https://github.com/FairRootGroup/FairCMakeModules
+license: LGPL-3.0-only
 requires:
   - CMake
 build_requires:

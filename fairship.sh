@@ -2,6 +2,7 @@ package: FairShip
 version: "%(tag_basename)s"
 tag: "26.06"
 source: https://github.com/ShipSoft/FairShip
+license: LGPL-3.0-or-later
 requires:
   - CMake
   - pythia8
