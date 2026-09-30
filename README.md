@@ -30,14 +30,15 @@ Composed with `--defaults ship[::gcc15]`.
 
 | `system:` field | Value |
 |---|---|
-| `prefix` | `/cvmfs/bits.cern.ch/ship/releases` — must match `cvmfs_prefix` in bits-console `communities/SHiP/ui-config.yaml`, or a build refuses to publish |
-| `cvmfs_user_prefix` | `/cvmfs/bits.cern.ch/ship/user` — per-user publishes go to `<user_prefix>/<login>` |
-| `cvmfs_releases_template` | `{prefix}/{release}/{pkg}/{version}/{arch}` |
-| `cvmfs_modules_template` | `{prefix}/{release}/{arch}/Modules/modulefiles/{pkg}` |
-| `cvmfs_shared_path_template` | `{prefix}/{release}/noarch/{pkg}/{version}` |
+| `prefix` | `/cvmfs/bits.cern.ch/ship` — must match `cvmfs_prefix` in bits-console `communities/SHiP/ui-config.yaml`, or a build refuses to publish |
+| `cvmfs_user_prefix` | `{prefix}/user` — per-user publishes go to `<user_prefix>/<login>` |
+| `cvmfs_packages_template` | `{prefix}/{arch}/Packages/{pkg}/{tag}` |
+| `cvmfs_modules_template` | `{prefix}/{arch}/Modules/modulefiles/{pkg}` |
+| `cvmfs_shared_path_template` | `{prefix}/noarch/{pkg}/{tag}` |
+| `cvmfs_releases_template`, `cvmfs_views_template` | empty — no release views (ALICE-style) |
 | `remote_store`, `certify_group`, `manifests_remote` | S3 store, certification group and manifests repo for SHiP builds |
 
-A package built for `LCG_110` lands at `…/ship/releases/LCG_110/<pkg>/<version>/<arch>`, where `<arch>` is the build arch (e.g. `x86_64-el9-gcc15-opt`); on the `main` line the `{release}/` segment collapses away.
+As in ALICE, a package lands once at `…/ship/<arch>/Packages/<pkg>/<version>-<revision>`, where `<arch>` is the build arch (e.g. `x86_64-el9-gcc15-opt`), whatever release it was built for; a package already there is not published again.
 
 The overlay deliberately has **no `env:` and no `disable:`**: both are hashed and would make every SHiP package differ from the shared stacks.
 
@@ -72,11 +73,11 @@ Each replacement changes the hash of that package and of everything above it in 
 
 ## Releases
 
-The single `release` variable names **both** the `lcg.bits` branch to build against and the `{release}` path segment. `bits` resolves it, highest precedence first:
+The single `release` variable names the `lcg.bits` (and `stacks.bits`) branch to build against. SHiP's CVMFS paths have no release level: packages are published once per build arch whatever the release. `bits` resolves it, highest precedence first:
 
 **Pass the release on the command line** (`--set release=LCG_110`); `main` is only the default. Every stacks-based group (atlas, lhcb, key4hep, ship) follows this rule, because a `--set` value is also exported into the build environment and enters every package hash: a release chosen any other way (a `release:` in a profile, or the checkout's branch name) hashes differently, and nothing the other groups built would be reused. Reuse also needs the same `lcg.bits` and `stacks.bits` commits and the same compiler/build-type profiles.
 
-The effective release must exist as an `lcg.bits` and a `stacks.bits` branch; on `main` the `{release}` path segment is dropped.
+The effective release must exist as an `lcg.bits` and a `stacks.bits` branch.
 
 ---
 
