@@ -1,113 +1,116 @@
 # ship.bits
 
-Policy layer and recipes for building **FairShip** (the SHiP experiment software) with [`bits`](../bits). It is a thin overlay on [`stacks.bits`](../stacks.bits), the shared base every community builds on: the build environment, the compiler/build-type profiles and the ~1100-recipe [`lcg.bits`](../lcg.bits) pool all come from there. This repository adds only the SHiP CVMFS namespace, the FairRoot/FairShip stack, and the few externals SHiP must build differently from LCG.
+Recipes and defaults for building **FairShip**, the SHiP experiment software, with
+[bits](https://github.com/bitsorg/bits). The repository contains the SHiP stack
+(FairShip, FairRoot, FairLogger, FairCMakeModules, GEANT3, ROOTEGPythia6), SHiP builds
+of three externals (ROOT, pythia6, GENIE), and the SHiP CVMFS and store settings in
+`defaults-ship.sh`. All other packages (Geant4, pythia8, EvtGen, ACTS, LHAPDF, ...) come
+from the [lcg.bits](https://github.com/bitsorg/lcg.bits) recipe pool. `defaults-ship.sh`
+requires [stacks.bits](https://github.com/bitsorg/stacks.bits), which provides the shared
+`release` base and the compiler and build-type profiles, and `stacks.bits` in turn
+requires `lcg.bits`. bits fetches both automatically through the
+[bits-providers](https://github.com/bitsorg/bits-providers) registry.
 
-Anything not listed under [Recipes](#recipes) comes from `lcg.bits` and hashes like the same package built by any other group on the same base (a group that sets its own `env:` or `package_family`, as LHCb currently does, is not on the same base), so it is **reused from the store** instead of rebuilt.
+The SHiP stack recipes are bits ports of the aliBuild recipes in
+[ShipSoft/shipdist](https://github.com/ShipSoft/shipdist), at the same package versions.
+Unlike shipdist, ship.bits does not build its own copy of every external: packages taken
+from `lcg.bits` get the same hashes as in the other stacks and are reused from the
+binary store instead of rebuilt.
 
----
+## Prerequisites
 
-## Provider chain
+- bits and its requirements (Python 3, git, Environment Modules), see the
+  [bits installation instructions](https://github.com/bitsorg/bits#installation).
+- A supported platform. The bits-console SHiP community builds for x86_64 el8, el9 and
+  el10, aarch64-el9, and x86_64 Ubuntu 22.04, 24.04 and 26.04. On macOS,
+  `defaults-ship.sh` switches ROOT to v6.40.00 for Apple clang and Xcode.
+- Read access to the SHiP binary store set in `defaults-ship.sh`
+  (`https://s3.cern.ch/swift/v1/lcgapp-bits-testing`). bits fetches prebuilt packages from
+  it by default.
 
-```
-ship.bits  ──requires──▶  stacks.bits  ──requires──▶  lcg.bits
-  defaults-ship.sh          defaults-release.sh          ROOT, Geant4, pythia8,
-  FairRoot, FairShip, …     gcc13/14/15, clang, dbg,      evtgen, acts, lhapdf, …
-                            cuda, dev3/dev4
-```
-
-`bits` clones `stacks.bits` and `lcg.bits` on demand (repository-provider packages) into `sw/REPOS/` and adds them to `BITS_PATH`. Recipes in `ship.bits` come first on the path, so a recipe here **replaces** the `lcg.bits` one of the same name for the whole SHiP build.
-
----
-
-## The `defaults-ship.sh` Overlay
-
-Composed with `--defaults ship[::gcc15]`.
-
-- `requires: stacks.bits` — the shared base.
-- `variables: release: "main"` plus `overrides: lcg.bits`/`stacks.bits: tag: "%(release)s"` — both providers follow the release; `main` is only the default (see [Releases](#releases)). Identical in every stacks-based overlay.
-- `overrides: "ROOT:osx"` — ROOT v6.40.00 on macOS only, for Apple-clang/Xcode; Linux keeps the recipe default.
-- `system:` — the CVMFS namespace and store policy. Never hashed, so it never affects reuse.
-
-| `system:` field | Value |
-|---|---|
-| `prefix` | `/cvmfs/bits.cern.ch/ship` — must match `cvmfs_prefix` in bits-console `communities/SHiP/ui-config.yaml`, or a build refuses to publish |
-| `cvmfs_user_prefix` | `{prefix}/user` — per-user publishes go to `<user_prefix>/<login>` |
-| `cvmfs_packages_template` | `{prefix}/{arch}/Packages/{pkg}/{tag}` |
-| `cvmfs_modules_template` | `{prefix}/{arch}/Modules/modulefiles/{pkg}` |
-| `cvmfs_shared_path_template` | `{prefix}/noarch/{pkg}/{tag}` |
-| `cvmfs_releases_template`, `cvmfs_views_template` | empty — no release views (ALICE-style) |
-| `remote_store`, `certify_group`, `manifests_remote` | S3 store, certification group and manifests repo for SHiP builds |
-
-As in ALICE, a package lands once at `…/ship/<arch>/Packages/<pkg>/<version>-<revision>`, where `<arch>` is the build arch (e.g. `x86_64-el9-gcc15-opt`), whatever release it was built for; a package already there is not published again.
-
-The overlay deliberately has **no `env:` and no `disable:`**: both are hashed and would make every SHiP package differ from the shared stacks.
-
----
-
-## Recipes
-
-SHiP's own stack:
-
-| Package | Version | Notes |
-|---|---|---|
-| `FairShip` | 26.06 | top of the stack |
-| `FairRoot` | v19.0.1 | |
-| `FairLogger` | v2.3.2 | |
-| `FairCMakeModules` | v1.0.0 | |
-| `GEANT3` | v4-5 | |
-| `ROOTEGPythia6` | pinned commit | |
-| `ninja-fortran` | Kitware Fortran fork | build tool for `pythia6` |
-| `termcap` | 1.0 | system check (`termcap.h`) |
-
-Externals that **replace** the `lcg.bits` recipe, because SHiP needs a different build:
-
-| Package | SHiP | `lcg.bits` | Why |
-|---|---|---|---|
-| `ROOT` | v6.38.00, with Pythia8/TPythia8 | v6.40.02 | FairShip uses TPythia8 |
-| `pythia6` | v6.4.28-snd | 429.2 | SHiP/SND-LHC sources with the ROOT/TPythia6 glue |
-| `GENIE` | R-3_06_02 | 2.12.6 | FairShip needs GENIE 3 |
-
-Each replacement changes the hash of that package and of everything above it in the SHiP build, so those are rebuilt for SHiP; everything below them is still reused. `lhapdf` is taken from `lcg.bits`.
-
----
-
-## Releases
-
-The single `release` variable names the `lcg.bits` (and `stacks.bits`) branch to build against. SHiP's CVMFS paths have no release level: packages are published once per build arch whatever the release. `bits` resolves it, highest precedence first:
-
-**Pass the release on the command line** (`--set release=LCG_110`); `main` is only the default. Every stacks-based group (atlas, lhcb, key4hep, ship) follows this rule, because a `--set` value is also exported into the build environment and enters every package hash: a release chosen any other way (a `release:` in a profile, or the checkout's branch name) hashes differently, and nothing the other groups built would be reused. Reuse also needs the same `lcg.bits` and `stacks.bits` commits and the same compiler/build-type profiles.
-
-The effective release must exist as an `lcg.bits` and a `stacks.bits` branch.
-
----
-
-## Command-Line Usage
+## Getting started
 
 ```bash
-bits deps  FairShip --defaults ship::gcc15                         # inspect the tree
-bits build FairShip --defaults ship::gcc15                         # main line
-bits build FairShip --defaults ship::gcc15 --set release=LCG_110   # on LCG_110
-bits build FairShip --defaults ship::gcc15::testbed                # publish to the testbed root
+bits init ship.bits && cd ship.bits     # or: git clone https://github.com/bitsorg/ship.bits
+bits use build --architecture x86_64-el9 --defaults ship::gcc15::opt --set release=LCG_110
+bits build --dry-run FairShip
+bits build FairShip
+bits enter FairShip/latest
 ```
 
-The `testbed` overlay (from [`testbed.bits`](../testbed.bits), which must be on `BITS_PATH`; always last in the chain) replaces only the CVMFS root and user prefix; the layout above is kept.
+The `bits use` profile stores the settings in this checkout, so every later
+`bits build` here gets them; options given on the command line still win. The build
+architecture is `x86_64-el9-gcc15-opt`. Check the machine with `bits doctor`. To build
+elsewhere, `export BITS_WORK_DIR=/path/to/sw`. See
+[Configuration](https://github.com/bitsorg/bits/blob/main/docs/USERGUIDE.md#4-configuration)
+in the bits user guide. Leave out `--set release=...` to build against the `main`
+branches of `lcg.bits` and `stacks.bits`.
 
-Explore a local build with `bitsenv`:
+## Notes for SHiP users
 
-```bash
-bitsenv q FairShip
-bitsenv enter FairShip/26.06
-```
+- **Choosing defaults.** Name the group overlay (`ship`), then one compiler and one build
+  type, as described in
+  [Composing profiles](https://github.com/bitsorg/stacks.bits#composing-profiles). SHiP
+  uses `gcc15::opt`, so builds run in `x86_64-el9-gcc15-opt`.
+- **Pass the release on the command line** (`--set release=LCG_110`, or record it with
+  `bits use` as above). The value selects the `lcg.bits` and `stacks.bits` branches, and
+  it enters every package hash. A release chosen any other way hashes differently, so
+  nothing built by the other groups is reused. The release must exist as a branch of
+  both `lcg.bits` and `stacks.bits`.
+- **Externals that replace the `lcg.bits` recipes.** Recipes in this repository come
+  first on the search path, so these replace the `lcg.bits` recipe of the same name for
+  the whole SHiP build:
 
-`bits cvmfs-path -c . --defaults ship::gcc15 --admin --package <pkg> --version <v> --platform <p>` prints where a package would be published, without building.
+  | Package | SHiP | `lcg.bits` | Why |
+  |---|---|---|---|
+  | `ROOT` | v6.38.00, built with Pythia8 | v6.40.02, Pythia8 off | FairShip uses TPythia8 |
+  | `pythia6` | v6.4.28-snd | 429.2 | SHiP/SND-LHC sources with the ROOT TPythia6 interface |
+  | `GENIE` | R-3_06_02 | 2.12.6 | FairShip needs GENIE 3 |
 
----
+  Each replacement changes the hash of that package and of everything that depends on
+  it, so those are rebuilt for SHiP. Everything below them is still reused.
+- **Developing FairShip.** `bits init -c . FairShip` creates a writable FairShip
+  checkout next to the recipes; later builds of `FairShip` use it. See the bits cookbook
+  on [developing a single package](https://github.com/bitsorg/bits/blob/main/docs/COOKBOOK.md#develop-and-iterate-on-a-single-package).
+- **CVMFS layout.** Builds publish under `/cvmfs/bits.cern.ch/ship` with the packages and
+  modulefiles templates of the shared
+  [stacks.bits layout](https://github.com/bitsorg/stacks.bits#cvmfs-layout). Deviation:
+  there are no release views (the release and view templates are empty), so the path does
+  not depend on the release. `prefix` must match `cvmfs_prefix` in the bits-console SHiP
+  community configuration, or a build refuses to publish. To preview a path without
+  building, run
+  `bits cvmfs-path -c . --defaults ship::gcc15::opt --admin --package <pkg> --version <v> --platform <arch>`.
+- **Store and certification.** `defaults-ship.sh` also sets the binary store
+  (`remote_store`), the certification group (`ship`) and the manifests repository used
+  by `bits certify`.
+- **Publishing to the testbed.** Append the `testbed` overlay from
+  [testbed.bits](https://github.com/bitsorg/testbed.bits) as the last profile, for example
+  `--defaults ship::gcc15::opt::testbed`. It changes only the CVMFS repository and user
+  prefix and keeps the layout.
 
-## Files Overview
+## Files
 
-| File | Role |
+| File | Purpose |
 |---|---|
-| `defaults-ship.sh` | SHiP overlay: `stacks.bits` base, release tracking, CVMFS namespace, store policy, macOS ROOT pin |
-| `fairship.sh`, `fairroot.sh`, `fairlogger.sh`, `faircmakemodules.sh`, `geant3.sh`, `rootegpythia6.sh` | the SHiP stack |
+| `defaults-ship.sh` | SHiP overlay: `stacks.bits` base, release tracking, CVMFS layout, store policy, macOS ROOT pin |
+| `fairship.sh`, `fairroot.sh`, `fairlogger.sh`, `faircmakemodules.sh`, `geant3.sh`, `rootegpythia6.sh` | The SHiP stack |
 | `root.sh`, `pythia6.sh`, `genie.sh` | SHiP builds of externals that replace the `lcg.bits` recipes |
-| `ninja-fortran.sh`, `termcap.sh` | build tool and system check |
+| `ninja-fortran.sh` | Kitware's Fortran-enabled ninja, a build tool for `pythia6` |
+| `termcap.sh` | System check for `termcap.h` (ncurses development headers) |
+
+## More information
+
+- [FairShip](https://github.com/ShipSoft/FairShip) and
+  [shipdist](https://github.com/ShipSoft/shipdist);
+  [sharing binaries through a store](https://github.com/bitsorg/bits/blob/main/docs/USERGUIDE.md#sharing-binaries-through-a-store)
+- [stacks.bits](https://github.com/bitsorg/stacks.bits#readme) and
+  [lcg.bits](https://github.com/bitsorg/lcg.bits#readme) READMEs: profiles, releases,
+  CVMFS layout and the recipe pool; [bits-providers](https://github.com/bitsorg/bits-providers): the registry
+- bits [User Guide](https://github.com/bitsorg/bits/blob/main/docs/USERGUIDE.md),
+  [Cookbook](https://github.com/bitsorg/bits/blob/main/docs/COOKBOOK.md),
+  [Reference](https://github.com/bitsorg/bits/blob/main/docs/REFERENCE.md)
+- [bits-console](https://gitlab.cern.ch/buncic/bits-console): CI builds and CVMFS publishing
+
+## License
+
+This repository does not contain a LICENSE file yet.
