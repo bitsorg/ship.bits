@@ -19,11 +19,22 @@ binary store instead of rebuilt.
 
 ## Prerequisites
 
-- bits and its requirements (Python 3, git, Environment Modules), see the
-  [bits installation instructions](https://github.com/bitsorg/bits#installation).
-- A supported platform. The bits-console SHiP community builds for x86_64 el8, el9 and
-  el10, aarch64-el9, and x86_64 Ubuntu 22.04, 24.04 and 26.04. On macOS,
-  `defaults-ship.sh` switches ROOT to v6.40.00 for Apple clang and Xcode.
+- bits, and one of two setups (see [Installation &
+  Prerequisites](https://github.com/bitsorg/bits/blob/main/docs/USERGUIDE.md#2-installation--prerequisites)
+  in the bits user guide; `bits doctor` checks the machine):
+  - docker or rootless podman, to build in the platform's builder image with `--docker`
+    (recommended, and the only way to reuse what the SHiP CI built);
+  - or the system packages listed in [Building
+    natively](https://github.com/bitsorg/bits/blob/main/docs/USERGUIDE.md#building-natively-what-to-install),
+    to build with this machine's compilers and libraries.
+- A platform the SHiP CI builds, so that its binaries are reused: `x86_64-el8`,
+  `x86_64-el9`, `x86_64-el10`, `aarch64-el9`, `x86_64-ubuntu2204`, `x86_64-ubuntu2404` and
+  `x86_64-ubuntu2604`. Pass it as `--architecture`: by itself bits names a machine after
+  its OS (an EL9 machine `slc9_x86-64`), which is not one of them. See [Finding a platform
+  with pre-built
+  binaries](https://github.com/bitsorg/bits/blob/main/docs/USERGUIDE.md#finding-a-platform-with-pre-built-binaries).
+- On macOS (a native build), `defaults-ship.sh` switches ROOT to v6.40.00 for Apple clang
+  and Xcode.
 - Read access to the SHiP binary store set in `defaults-ship.sh`
   (`https://s3.cern.ch/swift/v1/lcgapp-bits-testing`). bits fetches prebuilt packages from
   it by default.
@@ -32,19 +43,21 @@ binary store instead of rebuilt.
 
 ```bash
 bits init ship.bits && cd ship.bits     # or: git clone https://github.com/bitsorg/ship.bits
-bits use build --architecture x86_64-el9 --defaults ship::gcc15::opt --set release=LCG_110
+bits use build --docker --architecture x86_64-el9 --defaults ship::gcc15::opt --set release=LCG_110  # on macOS: without --docker and --architecture
 bits build --dry-run FairShip
 bits build FairShip
 bits enter FairShip/latest
 ```
 
-The `bits use` profile stores the settings in this checkout, so every later
-`bits build` here gets them; options given on the command line still win. The build
-architecture is `x86_64-el9-gcc15-opt`. Check the machine with `bits doctor`. To build
-elsewhere, `export BITS_WORK_DIR=/path/to/sw`. See
+The `bits use` profile stores the settings in this checkout, so every later `bits build`
+here gets them; options given on the command line still win. The build architecture is
+`x86_64-el9-gcc15-opt`. `--docker` builds in the platform's builder image; on a machine of
+the same platform `bits enter` then works here. Without it, bits builds with this
+machine's compilers and system packages, and reuses nothing the CI built. Check the
+machine with `bits doctor`. To build elsewhere, `export BITS_WORK_DIR=/path/to/sw`. See
 [Configuration](https://github.com/bitsorg/bits/blob/main/docs/USERGUIDE.md#4-configuration)
-in the bits user guide. Leave out `--set release=...` to build against the `main`
-branches of `lcg.bits` and `stacks.bits`.
+in the bits user guide. Leave out `--set release=...` to build against the `main` branches
+of `lcg.bits` and `stacks.bits`.
 
 ## Notes for SHiP users
 
