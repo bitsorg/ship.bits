@@ -85,21 +85,23 @@ of `lcg.bits` and `stacks.bits`.
 - **Developing FairShip.** `bits init -c . FairShip` creates a writable FairShip
   checkout next to the recipes; later builds of `FairShip` use it. See the bits cookbook
   on [developing a single package](https://github.com/bitsorg/bits/blob/main/docs/COOKBOOK.md#develop-and-iterate-on-a-single-package).
-- **CVMFS layout.** Builds publish under `/cvmfs/bits.cern.ch/ship` with the packages and
-  modulefiles templates of the shared
-  [stacks.bits layout](https://github.com/bitsorg/stacks.bits#cvmfs-layout). Deviation:
-  there are no release views (the release and view templates are empty), so the path does
-  not depend on the release. `prefix` must match `cvmfs_prefix` in the bits-console SHiP
-  community configuration, or a build refuses to publish. To preview a path without
-  building, run
-  `bits cvmfs-path -c . --defaults ship::gcc15::opt --admin --package <pkg> --version <v> --platform <arch>`.
 - **Store and certification.** `defaults-ship.sh` also sets the binary store
   (`remote_store`), the certification group (`ship`) and the manifests repository used
   by `bits certify`.
 - **Publishing to the testbed.** Append the `testbed` overlay from
   [testbed.bits](https://github.com/bitsorg/testbed.bits) as the last profile, for example
-  `--defaults ship::gcc15::opt::testbed`. It changes only the CVMFS repository and user
-  prefix and keeps the layout.
+  `--defaults ship::gcc15::opt::testbed`. It changes only the CVMFS repository and keeps
+  the layout.
+
+### Where SHiP is published on CVMFS
+
+SHiP software is published under `/cvmfs/bits.cern.ch/ship`, with the packages and
+modulefiles templates of the shared
+[stacks.bits layout](https://github.com/bitsorg/stacks.bits#cvmfs-layout). There is no
+release view: the release and view templates are empty, so the path does not depend on
+the release. `prefix` must match `cvmfs_prefix` in the bits-console SHiP community
+configuration, or a build refuses to publish. To preview a path without building, run
+`bits cvmfs-path -c . --defaults ship::gcc15::opt --admin --package <pkg> --version <v> --platform <arch>`.
 
 ## Files
 
