@@ -29,8 +29,7 @@ binary store instead of rebuilt.
     to build with this machine's compilers and libraries.
 - A platform the SHiP CI builds, so that its binaries are reused: `x86_64-el8`,
   `x86_64-el9`, `x86_64-el10`, `aarch64-el9`, `x86_64-ubuntu2204`, `x86_64-ubuntu2404` and
-  `x86_64-ubuntu2604`. Pass it as `--architecture`: by itself bits names a machine after
-  its OS (an EL9 machine `slc9_x86-64`), which is not one of them. See [Finding a platform
+  `x86_64-ubuntu2604`. Pass it as `--architecture`; on one of them, `bits architecture` prints it. See [Finding a platform
   with pre-built
   binaries](https://github.com/bitsorg/bits/blob/main/docs/USERGUIDE.md#finding-a-platform-with-pre-built-binaries).
 - On macOS (a native build), `defaults-ship.sh` switches ROOT to v6.40.00 for Apple clang
