@@ -29,14 +29,37 @@ binary store instead of rebuilt.
     to build with this machine's compilers and libraries.
 - A platform the SHiP CI builds, so that its binaries are reused: `x86_64-el8`,
   `x86_64-el9`, `x86_64-el10`, `aarch64-el9`, `x86_64-ubuntu2204`, `x86_64-ubuntu2404` and
-  `x86_64-ubuntu2604`. Pass it as `--architecture`; on one of them, `bits architecture` prints it. See [Finding a platform
+  `x86_64-ubuntu2604`; published on CVMFS today is `x86_64-el9` (gcc15 and gcc14, `opt`).
+  Pass it as `--architecture`; on one of them, `bits architecture` prints it. See [Finding a platform
   with pre-built
   binaries](https://github.com/bitsorg/bits/blob/main/docs/USERGUIDE.md#finding-a-platform-with-pre-built-binaries).
 - On macOS (a native build), `defaults-ship.sh` switches ROOT to v6.40.00 for Apple clang
   and Xcode.
+- Network access while FairShip builds: its git-lfs files come from
+  `media.githubusercontent.com` (with `--sandbox`, the recipe allows it).
 - Read access to the SHiP binary store set in `defaults-ship.sh`
   (`https://s3.cern.ch/swift/v1/lcgapp-bits-testing`). bits fetches prebuilt packages from
   it by default.
+
+## Using the published FairShip
+
+FairShip is published on CVMFS under `/cvmfs/bits.cern.ch/ship`, now `26.06` for
+`x86_64-el9-gcc15-opt` and `x86_64-el9-gcc14-opt`, with everything it needs, so nothing
+has to be built or checked out:
+
+```bash
+export BITS_CVMFS_PREFIX=/cvmfs/bits.cern.ch/ship
+bits q -a x86_64-el9-gcc15-opt FairShip            # the published versions
+bits enter -a x86_64-el9-gcc15-opt FairShip/<version>
+```
+
+`BITS_CVMFS_PREFIX` names SHiP's tree (with the CVMFS entry point
+`/cvmfs/bits.cern.ch/bits/bin/bits`, `bits --community ship ...` sets it). `bits enter`
+opens a sub-shell with FairShip and its dependencies loaded from the CVMFS modules (SHiP
+has no release view); leave it with `exit`. In it, run FairShip as its README describes
+([Running a simulation](#running-a-simulation)). The revisions published before the
+recipes set FairShip's run-time environment in its module and fetched its git-lfs files
+(`26.06-1` and `26.06-2`) lack `$FAIRSHIP` and the field maps; use a later one.
 
 ## Getting started
 
@@ -61,7 +84,29 @@ BITS_WORK_DIR=/path/to/sw`. See
 in the bits user guide. Leave out `--set release=...` to build against the `main` branches
 of `lcg.bits` and `stacks.bits`.
 
+### Running a simulation
+
+In `bits enter FairShip/...`, as in [FairShip's README](https://github.com/ShipSoft/FairShip#run-instructions):
+
+```bash
+python $FAIRSHIP/macro/run_simScript.py --tag my-simulation        # sim_ and geo_my-simulation.root
+python $FAIRSHIP/macro/ShipReco.py -f sim_my-simulation.root -g geo_my-simulation.root
+python -i $FAIRSHIP/macro/ShipAna.py -f sim_my-simulation.root -r sim_my-simulation_rec.root -g geo_my-simulation.root
+```
+
+The modules set what FairShip's scripts read: `FAIRSHIP` and `VMCWORKDIR` (the FairShip
+tree), `GEOMPATH`, `CONFIG_DIR`, `GALCONF`, `FAIRLIBDIR`, `EOSSHIP` and FairShip's
+`python/` on `PYTHONPATH`; GENIE's `GENIE`, GEANT3's `G3SYS` and Pythia8's `PYTHIA8DATA`.
+FairShip keeps its `.root` inputs (field maps, ...) in git-lfs; the recipe downloads them
+from GitHub while it builds, so no `git lfs` is needed.
+
 ## Notes for SHiP users
+
+- **bits, pixi and the legacy releases.** FairShip's own README builds it with pixi from
+  conda-forge, and keeps `/cvmfs/ship.cern.ch` releases (aliBuild and shipdist, up to
+  26.04) for older work. ship.bits builds the same FairShip with bits, from the shipdist
+  recipes ported to bits, with SHiP's ROOT, pythia6 and GENIE and the rest from
+  `lcg.bits`, and publishes it under `/cvmfs/bits.cern.ch/ship`.
 
 - **Choosing defaults.** Name the group overlay (`ship`), then one compiler and one build
   type, as described in
