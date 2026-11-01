@@ -53,4 +53,11 @@ function PostInstall() {
   if [[ ! -d "$INSTALLROOT/lib64" ]]; then
     ln -sf lib "$INSTALLROOT/lib64"
   fi
+  # What env:/prepend_path: give a build, for bits enter too.
+  cat >> "$MODULEFILE" <<'EoF'
+setenv GEANT3DIR $PKG_ROOT
+setenv G3SYS     $PKG_ROOT
+prepend-path LD_LIBRARY_PATH   $PKG_ROOT/lib64
+prepend-path ROOT_INCLUDE_PATH $PKG_ROOT/include/TGeant3
+EoF
 }

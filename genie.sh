@@ -92,3 +92,15 @@ function MakeInstall() {
   find src -name '*.pcm' -exec rsync -a {} "$INSTALLROOT/genie/lib/" \;
   find src -name '*.h'   -exec rsync -a {} "$INSTALLROOT/genie/inc/" \;
 }
+
+function PostInstall() {
+  # What env:/prepend_path: give a build, for bits enter too.
+  cat >> "$MODULEFILE" <<'EoF'
+setenv GENIE_ROOT $PKG_ROOT
+setenv GENIE      $PKG_ROOT/genie
+prepend-path PATH              $PKG_ROOT/genie/bin
+prepend-path LD_LIBRARY_PATH   $PKG_ROOT/genie/lib
+prepend-path ROOT_INCLUDE_PATH $PKG_ROOT/genie/src
+prepend-path ROOT_INCLUDE_PATH $PKG_ROOT/genie/inc
+EoF
+}

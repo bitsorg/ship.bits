@@ -75,4 +75,9 @@ function PostInstall() {
   mv "$INSTALLROOT/lib/libTPythia6.rootmap" "$INSTALLROOT/lib/libEGPythia6.rootmap"
   # Do NOT rename libTPythia6_rdict.pcm: the literal name is baked into the
   # dictionary registration; TCling looks it up by dictionary name (TPythia6).
+  # What env:/prepend_path: give a build, for bits enter too.
+  cat >> "$MODULEFILE" <<'EoF'
+setenv ROOTEGPYTHIA6 $PKG_ROOT
+prepend-path CMAKE_MODULE_PATH $PKG_ROOT/lib/cmake/ROOTEGPythia6/Modules
+EoF
 }

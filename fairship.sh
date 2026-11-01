@@ -32,6 +32,8 @@ build_requires:
   - "GCC-Toolchain:(?!osx)"
   - FairCMakeModules
   - ninja
+system:
+  sandbox_network: "off"   # network allowed: the git-lfs files are downloaded (Configure)
 env:
   FAIRSHIP: "$FAIRSHIP_ROOT"
   EOSSHIP: "root://eospublic.cern.ch/"
@@ -57,7 +59,26 @@ append_path:
 ##############################
 MODULE_OPTIONS="--bin --lib --root-inc"
 ##############################
+# FairShip keeps its *.root inputs (field maps, ...) in git-lfs, which a clone
+# leaves as pointers: fetch each from GitHub's media server, checking its sha256.
+function FetchLfs() {
+  local f oid rev
+  rev=$(git -C "$BITS_CMAKE_SRC" rev-parse HEAD) || return 1
+  find "$BITS_CMAKE_SRC" -name '*.root' -size -2k -not -path '*/.git/*' -print0 |
+  while IFS= read -r -d '' f; do
+    grep -q '^version https://git-lfs.github.com/spec/v1' "$f" || continue
+    oid=$(sed -n 's/^oid sha256://p' "$f")
+    curl -fsSL --retry 3 -o "$f.lfs" \
+      "https://media.githubusercontent.com/media/ShipSoft/FairShip/$rev/${f#"$BITS_CMAKE_SRC"/}" ||
+      { echo "FairShip: cannot download ${f#"$BITS_CMAKE_SRC"/} (git-lfs)" >&2; exit 1; }
+    [ "$(python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$f.lfs")" = "$oid" ] ||
+      { echo "FairShip: sha256 mismatch for ${f#"$BITS_CMAKE_SRC"/}" >&2; exit 1; }
+    mv "$f.lfs" "$f"
+  done
+}
+
 function Configure() {
+  FetchLfs || exit 1   # Run's && chain does not stop on a failure inside it
   # FairShip runs from its installed source tree (python/, geometry/, gconfig/).
   # Copy the private source copy into INSTALLROOT; the CMake install below then
   # overlays the compiled libraries on top.
@@ -107,4 +128,16 @@ function PostInstall() {
   # Record the git hash (informational metadata in the modulefile).
   local h; h=$(git -C "$BITS_CMAKE_SRC" rev-parse HEAD 2>/dev/null || echo unknown)
   echo "setenv FAIRSHIP_HASH $h" >> "$MODULEFILE"
+  # What env:/prepend_path: give a build, for bits enter too.
+  cat >> "$MODULEFILE" <<'EoF'
+setenv FAIRSHIP    $PKG_ROOT
+setenv VMCWORKDIR  $PKG_ROOT
+setenv GEOMPATH    $PKG_ROOT/geometry
+setenv CONFIG_DIR  $PKG_ROOT/gconfig
+setenv GALCONF     $PKG_ROOT/shipgen/genie_config
+setenv FAIRLIBDIR  $PKG_ROOT/lib
+setenv EOSSHIP     root://eospublic.cern.ch/
+prepend-path PYTHONPATH $PKG_ROOT/python
+if {[info exists ::env(PYTHIA8_ROOT)]} { append-path ROOT_INCLUDE_PATH $::env(PYTHIA8_ROOT)/include/Pythia8 }
+EoF
 }

@@ -32,3 +32,8 @@ function Configure() {
     ${CMAKE_PREFIX_PATH:+-DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"}  \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 }
+
+function PostInstall() {
+  # What prepend_path: gives a build, for bits enter too.
+  echo 'prepend-path AGILE_GEN_PATH $PKG_ROOT' >> "$MODULEFILE"
+}

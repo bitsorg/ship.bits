@@ -97,4 +97,11 @@ function PostInstall() {
   # Record the git hash (informational; consumed downstream by FairShip).
   local h; h=$(git -C "$BITS_CMAKE_SRC" rev-parse HEAD 2>/dev/null || echo unknown)
   echo "setenv FAIRROOT_HASH $h" >> "$MODULEFILE"
+  # What env: gives a build, for bits enter too.
+  cat >> "$MODULEFILE" <<'EoF'
+setenv FAIRROOTPATH $PKG_ROOT
+setenv VMCWORKDIR   $PKG_ROOT/share/fairbase/examples
+setenv GEOMPATH     $PKG_ROOT/share/fairbase/examples/common/geometry
+setenv CONFIG_DIR   $PKG_ROOT/share/fairbase/examples/common/gconfig
+EoF
 }
