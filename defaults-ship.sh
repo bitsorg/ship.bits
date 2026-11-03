@@ -11,22 +11,12 @@ variables:
 requires:
   - stacks.bits
 
-# ship CVMFS namespace + store policy (system: is NOT hashed -> never affects reuse).
+# ship store policy (system: is NOT hashed -> never affects reuse); the CVMFS
+# namespace and layout are in cvmfs.yaml.
 system:
   remote_store:     "https://s3.cern.ch/swift/v1/lcgapp-bits-testing"
   certify_group:    "ship"
   manifests_remote: "https://gitlab.cern.ch/buncic/bits-manifests.git"
-  prefix:                     "/cvmfs/bits.cern.ch/ship"
-  cvmfs_user_prefix:          "{prefix}/user"
-  # ALICE-style: packages published ONCE per build arch (x86_64-el9-gcc15-opt,
-  # so compilers/build types never collide) under their version-revision, with
-  # modulefiles beside them; an unchanged package is not sent again. No release
-  # views: the empty releases/views templates clear the ones stacks.bits sets.
-  cvmfs_packages_template:    "{prefix}/{arch}/Packages/{pkg}/{tag}"
-  cvmfs_modules_template:     "{prefix}/{arch}/Modules/modulefiles/{pkg}"
-  cvmfs_shared_path_template: "{prefix}/noarch/{pkg}/{tag}"
-  cvmfs_releases_template:    ""
-  cvmfs_views_template:       ""
 
 overrides:
   lcg.bits:

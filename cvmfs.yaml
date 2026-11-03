@@ -1,0 +1,16 @@
+# CVMFS layout of this recipe repository: the keys of a defaults profile's
+# system: section, read with the first profile taken from this repository
+# (a later profile, e.g. a nightly one, can still change a key). See bits'
+# docs/REFERENCE.md, "The CVMFS layout file: cvmfs.yaml".
+#
+prefix:                     "/cvmfs/bits.cern.ch/ship"
+cvmfs_user_prefix:          "{prefix}/user"
+# ALICE-style: packages published ONCE per build arch (x86_64-el9-gcc15-opt,
+# so compilers/build types never collide) under their version-revision, with
+# modulefiles beside them; an unchanged package is not sent again. No release
+# views: the empty releases/views templates clear the ones stacks.bits sets.
+cvmfs_packages_template:    "{prefix}/{arch}/Packages/{pkg}/{tag}"
+cvmfs_modules_template:     "{prefix}/{arch}/Modules/modulefiles/{pkg}"
+cvmfs_shared_path_template: "{prefix}/noarch/{pkg}/{tag}"
+cvmfs_releases_template:    ""
+cvmfs_views_template:       ""
