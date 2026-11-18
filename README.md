@@ -155,10 +155,10 @@ configuration, or a build refuses to publish. To preview a path without building
 | File | Purpose |
 |---|---|
 | `defaults-ship.sh` | SHiP overlay: `stacks.bits` base, release tracking, CVMFS layout, store policy, macOS ROOT pin |
-| `fairship.sh`, `fairroot.sh`, `fairlogger.sh`, `faircmakemodules.sh`, `geant3.sh`, `rootegpythia6.sh` | The SHiP stack |
-| `root.sh`, `pythia6.sh`, `genie.sh` | SHiP builds of externals that replace the `lcg.bits` recipes |
-| `ninja-fortran.sh` | Kitware's Fortran-enabled ninja, a build tool for `pythia6` |
-| `termcap.sh` | System check for `termcap.h` (ncurses development headers) |
+| `packages/fairship.sh`, `packages/fairroot.sh`, `packages/fairlogger.sh`, `packages/faircmakemodules.sh`, `packages/geant3.sh`, `packages/rootegpythia6.sh` | The SHiP stack |
+| `packages/root.sh`, `packages/pythia6.sh`, `packages/genie.sh` | SHiP builds of externals that replace the `lcg.bits` recipes |
+| `packages/ninja-fortran.sh` | Kitware's Fortran-enabled ninja, a build tool for `pythia6` |
+| `packages/termcap.sh` | System check for `termcap.h` (ncurses development headers) |
 
 ## More information
 
